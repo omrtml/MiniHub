@@ -12,6 +12,8 @@ import { useZkLogin } from './hooks/useZkLogin';
 import { useActiveJobs } from './hooks/useMiniHub';
 import { Profile } from './pages/Profile';
 import { CreateJob } from './pages/CreateJob';
+import { EmployerProfile } from './pages/EmployerProfile';
+import { ApplyJobModal } from './components/ApplyJobModal';
 import logoImage from './img/logo.png';
 
 // Configure query client
@@ -30,6 +32,7 @@ function JobListings() {
   // Fetch jobs from blockchain using SDK
   const { data: jobs = [], isLoading, error } = useActiveJobs();
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   
   // Check if user is authenticated via either method
   const isAuthenticated = !!walletAccount || zkLogin.isConnected;
@@ -104,12 +107,23 @@ function JobListings() {
               <span>📊 {job.applicationCount} applications</span>
               <span>⏰ Deadline: {new Date(job.deadline).toLocaleDateString()}</span>
             </div>
-            <button className="apply-btn" disabled={!isAuthenticated || !job.isActive}>
+            <button 
+              className="apply-btn" 
+              disabled={!isAuthenticated || !job.isActive}
+              onClick={() => isAuthenticated && job.isActive && setSelectedJob(job)}
+            >
               {!isAuthenticated ? 'Sign In to Apply' : !job.isActive ? 'Job Closed' : 'Apply Now'}
             </button>
           </div>
         ))}
       </div>
+
+      {selectedJob && (
+        <ApplyJobModal 
+          job={selectedJob} 
+          onClose={() => setSelectedJob(null)} 
+        />
+      )}
 
       {filteredJobs.length === 0 && !isLoading && !error && (
         <div className="no-results">
@@ -173,6 +187,12 @@ function AppContent() {
             className={`nav-link ${location.pathname === '/profile' ? 'active' : ''}`}
           >
             Profile
+          </Link>
+          <Link 
+            to="/employer-profile" 
+            className={`nav-link ${location.pathname === '/employer-profile' ? 'active' : ''}`}
+          >
+            Employer
           </Link>
           <Link 
             to="/create-job" 
@@ -258,6 +278,7 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<JobListings />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/employer-profile" element={<EmployerProfile />} />
           <Route path="/create-job" element={<CreateJob />} />
         </Routes>
       </main>
@@ -273,7 +294,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <SuiClientProvider networks={networkConfig} defaultNetwork="testnet">
-        <WalletProvider autoConnect>
+        <WalletProvider autoConnect preferredWallets={['Sui Wallet', 'Suiet', 'Ethos Wallet', 'Phantom']}>
           <Router>
             <AppContent />
           </Router>

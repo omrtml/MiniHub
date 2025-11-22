@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
 import { useZkLogin } from '../hooks/useZkLogin';
-import { MiniHubSDK } from '../sdk/minihub-sdk-simple';
+import { MiniHubSDK, ApplicationProfile, Job } from '../sdk/minihub-sdk-simple';
 import './Profile.css';
 
 export function Profile() {
@@ -17,6 +17,9 @@ export function Profile() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+  const [sdk, setSdk] = useState<MiniHubSDK | null>(null);
+  const [applicationsWithJobs, setApplicationsWithJobs] = useState<Array<ApplicationProfile & { job?: Job }>>([]);
+  const [isLoadingApplications, setIsLoadingApplications] = useState(false);
   const [profileData, setProfileData] = useState({
     name: '',
     bio: '',
@@ -40,7 +43,7 @@ export function Profile() {
       console.log('🔍 Loading profile for address:', userAddress);
 
       try {
-        const sdk = new MiniHubSDK(client, {
+        const sdkInstance = new MiniHubSDK(client, {
           packageId: import.meta.env.VITE_JOB_BOARD_PACKAGE_ID,
           jobBoardId: import.meta.env.VITE_JOB_BOARD_OBJECT_ID,
           userRegistryId: import.meta.env.VITE_USER_REGISTRY_ID,
@@ -48,12 +51,14 @@ export function Profile() {
           clockId: '0x6',
         });
 
+        setSdk(sdkInstance);
+
         console.log('📦 SDK Config:', {
           packageId: import.meta.env.VITE_JOB_BOARD_PACKAGE_ID,
           userRegistryId: import.meta.env.VITE_USER_REGISTRY_ID,
         });
 
-        const profile = await sdk.getUserProfileByAddress(userAddress);
+        const profile = await sdkInstance.getUserProfileByAddress(userAddress);
         
         console.log('📋 Profile fetched:', profile);
 
@@ -69,6 +74,31 @@ export function Profile() {
           });
           setProfileId(profile.id);
           console.log('✅ Profile ID set:', profile.id);
+
+          // Load user applications
+          setIsLoadingApplications(true);
+          try {
+            const userApps = await sdkInstance.getUserApplications(userAddress);
+            console.log('✅ Loaded', userApps.length, 'applications');
+
+            // Load job details for each application
+            const appsWithJobs = await Promise.all(
+              userApps.map(async (app: ApplicationProfile) => {
+                try {
+                  const job = await sdkInstance.getJob(app.jobId);
+                  return { ...app, job: job || undefined };
+                } catch (error) {
+                  console.error('Error loading job for application:', error);
+                  return { ...app, job: undefined };
+                }
+              })
+            );
+            setApplicationsWithJobs(appsWithJobs);
+          } catch (error) {
+            console.error('Error loading applications:', error);
+          } finally {
+            setIsLoadingApplications(false);
+          }
         } else {
           console.log('⚠️ No profile found for this wallet');
         }
@@ -239,146 +269,180 @@ export function Profile() {
       </div>
 
       <div className="profile-content">
-        {/* Avatar Section */}
-        <div className="profile-avatar-section">
-          <div className="profile-avatar">
-            {profileData.avatarUrl ? (
-              <img src={profileData.avatarUrl} alt="Profile" />
+        {/* Applications Section - Show by default, hide when editing */}
+        {!isEditing && (
+          <div className="profile-section">
+            <h2>My Applications</h2>
+            {isLoadingApplications ? (
+              <div className="applications-loading">
+                <div className="loading-spinner"></div>
+                <p>Loading your applications...</p>
+              </div>
+            ) : applicationsWithJobs.length === 0 ? (
+              <div className="no-applications">
+                <p>You haven't applied to any jobs yet.</p>
+                <p>Browse available jobs on the <strong>Jobs</strong> page!</p>
+              </div>
             ) : (
-              <div className="avatar-placeholder">
-                {profileData.name ? profileData.name.charAt(0).toUpperCase() : '👤'}
+              <div className="applications-list">
+                {applicationsWithJobs.map((app) => (
+                  <div key={app.id} className="application-card">
+                    <div className="application-header">
+                      <h3>{app.job?.title || 'Job Title'}</h3>
+                      <span className={`application-status ${app.job?.hiredCandidate === userAddress ? 'hired' : 'pending'}`}>
+                        {app.job?.hiredCandidate === userAddress ? '✅ Hired' : 
+                         app.job?.hiredCandidate ? '❌ Position Filled' : '⏳ Pending'}
+                      </span>
+                    </div>
+                    {app.job && (
+                      <>
+                        <p className="application-job-description">{app.job.description}</p>
+                        <div className="application-details">
+                          <span>💰 {app.job.salary ? `$${app.job.salary.toLocaleString()}` : 'Not specified'}</span>
+                          <span>📅 Deadline: {new Date(app.job.deadline).toLocaleDateString()}</span>
+                          <span>📊 {app.job.applicationCount} applicants</span>
+                        </div>
+                      </>
+                    )}
+                    <div className="application-info">
+                      <p><strong>Your Cover Message:</strong></p>
+                      <p className="cover-message">{app.coverMessage}</p>
+                      {app.cvUrl && (
+                        <p>
+                          <strong>CV:</strong>{' '}
+                          <a href={app.cvUrl} target="_blank" rel="noopener noreferrer" className="cv-link">
+                            📄 View CV
+                          </a>
+                        </p>
+                      )}
+                      <p className="application-date">
+                        Applied on: {new Date(app.timestamp).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
-          {isEditing && (
-            <input
-              type="text"
-              placeholder="Avatar URL"
-              value={profileData.avatarUrl}
-              onChange={(e) => setProfileData({ ...profileData, avatarUrl: e.target.value })}
-              className="profile-input"
-            />
-          )}
-        </div>
+        )}
 
-        {/* Basic Info */}
-        <div className="profile-section">
-          <h2>Basic Information</h2>
-          <div className="profile-field">
-            <label>Wallet Address</label>
-            <div className="profile-address">
-              {userAddress?.slice(0, 10)}...{userAddress?.slice(-8)}
-            </div>
-          </div>
-
-          <div className="profile-field">
-            <label>Name</label>
-            {isEditing ? (
-              <input
-                type="text"
-                placeholder="Your name"
-                value={profileData.name}
-                onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                className="profile-input"
-              />
-            ) : (
-              <div className="profile-value">{profileData.name || 'Not set'}</div>
-            )}
-          </div>
-
-          <div className="profile-field">
-            <label>Bio</label>
-            {isEditing ? (
-              <textarea
-                placeholder="Tell us about yourself..."
-                value={profileData.bio}
-                onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
-                className="profile-textarea"
-                rows={4}
-              />
-            ) : (
-              <div className="profile-value">{profileData.bio || 'Not set'}</div>
-            )}
-          </div>
-
-          <div className="profile-field">
-            <label>Experience (Years)</label>
-            {isEditing ? (
-              <input
-                type="number"
-                min="0"
-                placeholder="Years of experience"
-                value={profileData.experienceYears}
-                onChange={(e) => setProfileData({ ...profileData, experienceYears: parseInt(e.target.value) || 0 })}
-                className="profile-input"
-              />
-            ) : (
-              <div className="profile-value">{profileData.experienceYears} years</div>
-            )}
-          </div>
-
-          <div className="profile-field">
-            <label>Portfolio URL</label>
-            {isEditing ? (
-              <input
-                type="url"
-                placeholder="https://your-portfolio.com"
-                value={profileData.portfolioUrl}
-                onChange={(e) => setProfileData({ ...profileData, portfolioUrl: e.target.value })}
-                className="profile-input"
-              />
-            ) : (
-              <div className="profile-value">
-                {profileData.portfolioUrl ? (
-                  <a href={profileData.portfolioUrl} target="_blank" rel="noopener noreferrer">
-                    {profileData.portfolioUrl}
-                  </a>
+        {/* Profile Edit Form - Only show when editing */}
+        {isEditing && (
+          <>
+            {/* Avatar Section */}
+            <div className="profile-avatar-section">
+              <div className="profile-avatar">
+                {profileData.avatarUrl ? (
+                  <img src={profileData.avatarUrl} alt="Profile" />
                 ) : (
-                  'Not set'
+                  <div className="avatar-placeholder">
+                    {profileData.name ? profileData.name.charAt(0).toUpperCase() : '👤'}
+                  </div>
                 )}
               </div>
-            )}
-          </div>
-        </div>
-
-        {/* Skills Section */}
-        <div className="profile-section">
-          <h2>Skills</h2>
-          <div className="skills-container">
-            {profileData.skills.map((skill, index) => (
-              <div key={index} className="skill-tag">
-                {skill}
-                {isEditing && (
-                  <button 
-                    onClick={() => handleRemoveSkill(skill)}
-                    className="remove-skill-btn"
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            ))}
-            {profileData.skills.length === 0 && !isEditing && (
-              <div className="no-skills">No skills added yet</div>
-            )}
-          </div>
-
-          {isEditing && (
-            <div className="add-skill-section">
               <input
                 type="text"
-                placeholder="Add a skill (e.g., React, Solidity)"
-                value={newSkill}
-                onChange={(e) => setNewSkill(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
+                placeholder="Avatar URL"
+                value={profileData.avatarUrl}
+                onChange={(e) => setProfileData({ ...profileData, avatarUrl: e.target.value })}
                 className="profile-input"
               />
-              <button onClick={handleAddSkill} className="add-skill-btn">
-                + Add Skill
-              </button>
             </div>
-          )}
-        </div>
+
+            {/* Basic Info */}
+            <div className="profile-section">
+              <h2>Basic Information</h2>
+              <div className="profile-field">
+                <label>Wallet Address</label>
+                <div className="profile-address">
+                  {userAddress?.slice(0, 10)}...{userAddress?.slice(-8)}
+                </div>
+              </div>
+
+              <div className="profile-field">
+                <label>Name</label>
+                <input
+                  type="text"
+                  placeholder="Your name"
+                  value={profileData.name}
+                  onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
+                  className="profile-input"
+                />
+              </div>
+
+              <div className="profile-field">
+                <label>Bio</label>
+                <textarea
+                  placeholder="Tell us about yourself..."
+                  value={profileData.bio}
+                  onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                  className="profile-textarea"
+                  rows={4}
+                />
+              </div>
+
+              <div className="profile-field">
+                <label>Experience (Years)</label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Years of experience"
+                  value={profileData.experienceYears}
+                  onChange={(e) => setProfileData({ ...profileData, experienceYears: parseInt(e.target.value) || 0 })}
+                  className="profile-input"
+                />
+              </div>
+
+              <div className="profile-field">
+                <label>Portfolio URL</label>
+                <input
+                  type="url"
+                  placeholder="https://your-portfolio.com"
+                  value={profileData.portfolioUrl}
+                  onChange={(e) => setProfileData({ ...profileData, portfolioUrl: e.target.value })}
+                  className="profile-input"
+                />
+              </div>
+            </div>
+
+            {/* Skills Section */}
+            <div className="profile-section">
+              <h2>Skills</h2>
+              <div className="skills-container">
+                {profileData.skills.map((skill, index) => (
+                  <div key={index} className="skill-tag">
+                    {skill}
+                    <button 
+                      onClick={() => handleRemoveSkill(skill)}
+                      className="remove-skill-btn"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="add-skill-section">
+                <input
+                  type="text"
+                  placeholder="Add a skill (e.g., React, Solidity)"
+                  value={newSkill}
+                  onChange={(e) => setNewSkill(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddSkill()}
+                  className="profile-input"
+                />
+                <button onClick={handleAddSkill} className="add-skill-btn">
+                  + Add Skill
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Save Button */}
         {isEditing && (

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
 import { useZkLogin } from '../hooks/useZkLogin';
 import { MiniHubSDK } from '../sdk/minihub-sdk-simple';
@@ -12,6 +12,8 @@ export function CreateJob() {
   const userAddress = walletAccount?.address || zkLogin.address;
   const isAuthenticated = !!walletAccount || zkLogin.isConnected;
 
+  const [employerProfileId, setEmployerProfileId] = useState<string | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [jobData, setJobData] = useState({
     title: '',
     description: '',
@@ -24,8 +26,39 @@ export function CreateJob() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
-  // TODO: Replace with actual employer profile ID from user's profile
-  const TEMP_EMPLOYER_PROFILE_ID = 'employer_profile_id_placeholder';
+  // Load employer profile on mount
+  useEffect(() => {
+    const loadEmployerProfile = async () => {
+      if (!userAddress) {
+        setIsLoadingProfile(false);
+        return;
+      }
+
+      try {
+        const sdk = new MiniHubSDK(client, {
+          packageId: import.meta.env.VITE_JOB_BOARD_PACKAGE_ID,
+          jobBoardId: import.meta.env.VITE_JOB_BOARD_OBJECT_ID,
+          userRegistryId: import.meta.env.VITE_USER_REGISTRY_ID,
+          employerRegistryId: import.meta.env.VITE_EMPLOYER_REGISTRY_ID,
+          clockId: '0x6',
+        });
+
+        const profile = await sdk.getEmployerProfileByAddress(userAddress);
+        if (profile) {
+          setEmployerProfileId(profile.id);
+          console.log('✅ Employer profile loaded:', profile.id);
+        } else {
+          console.log('⚠️ No employer profile found for this wallet');
+        }
+      } catch (error) {
+        console.error('Error loading employer profile:', error);
+      } finally {
+        setIsLoadingProfile(false);
+      }
+    };
+
+    loadEmployerProfile();
+  }, [userAddress, client]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -67,6 +100,11 @@ export function CreateJob() {
       return;
     }
 
+    if (!employerProfileId) {
+      setSubmitStatus({ type: 'error', message: 'You need to create an employer profile before posting jobs. Contact support to create one.' });
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitStatus(null);
 
@@ -88,7 +126,7 @@ export function CreateJob() {
         : undefined;
 
       const tx = sdk.createPostJobTransaction({
-        employerProfileId: TEMP_EMPLOYER_PROFILE_ID,
+        employerProfileId: employerProfileId,
         title: jobData.title,
         description: jobData.description,
         salary: salary,
@@ -134,6 +172,31 @@ export function CreateJob() {
         <div className="create-job-not-authenticated">
           <h2>Authentication Required</h2>
           <p>Please connect your wallet or sign in to post a job</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoadingProfile) {
+    return (
+      <div className="create-job-container">
+        <div className="create-job-loading">
+          <div className="spinner"></div>
+          <p>Loading your employer profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!employerProfileId) {
+    return (
+      <div className="create-job-container">
+        <div className="create-job-not-authenticated">
+          <h2>Employer Profile Required</h2>
+          <p>You need to create an employer profile before posting jobs.</p>
+          <p style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#666' }}>
+            Employer profile creation feature is coming soon. Contact support to get started.
+          </p>
         </div>
       </div>
     );

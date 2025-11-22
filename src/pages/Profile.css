@@ -363,3 +363,156 @@
     width: 100%;
   }
 }
+
+/* Applications Section */
+.applications-loading {
+  text-align: center;
+  padding: 2rem;
+  color: #7f8c8d;
+}
+
+.applications-loading .loading-spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 1rem;
+}
+
+.no-applications {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #95a5a6;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.no-applications p {
+  margin: 0.5rem 0;
+}
+
+.applications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.application-card {
+  background: white;
+  border: 1px solid #dee2e6;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.2s;
+}
+
+.application-card:hover {
+  border-color: var(--color-orange);
+  box-shadow: 0 4px 12px rgba(255, 107, 53, 0.1);
+}
+
+.application-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.application-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.25rem;
+}
+
+.application-status {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.application-status.hired {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.application-status.pending {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.application-job-description {
+  color: #495057;
+  line-height: 1.6;
+  margin: 0 0 1rem 0;
+}
+
+.application-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.application-details span {
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.application-info {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.application-info p {
+  margin: 0.5rem 0;
+  color: #495057;
+}
+
+.application-info strong {
+  color: #2c3e50;
+}
+
+.cover-message {
+  background: white;
+  padding: 1rem;
+  border-radius: 6px;
+  border-left: 3px solid var(--color-orange);
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.cv-link {
+  color: var(--color-orange);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.cv-link:hover {
+  text-decoration: underline;
+}
+
+.application-date {
+  font-size: 0.85rem;
+  color: #95a5a6;
+  margin-top: 1rem !important;
+}
+
+@media (max-width: 768px) {
+  .application-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .application-details {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

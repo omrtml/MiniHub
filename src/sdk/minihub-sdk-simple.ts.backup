@@ -9,7 +9,6 @@
 
 import { Transaction } from '@mysten/sui/transactions';
 import { SuiClient } from '@mysten/sui/client';
-import { bcs } from '@mysten/sui/bcs';
 
 // ====== Types ======
 
@@ -75,11 +74,6 @@ export interface JobBoard {
   id: string;
   jobCount: number;
   jobIds: string[];
-}
-
-export interface EmployerCap {
-  id: string;
-  jobId: string;
 }
 
 // ====== SDK Class ======
@@ -295,16 +289,27 @@ export class MiniHubSDK {
     try {
       console.log('🔍 SDK: Searching for UserProfile for address:', userAddress);
       
+      // Get the UserRegistry object
+      console.log('🔍 SDK: Fetching UserRegistry object:', this.config.userRegistryId);
       const registryObj = await this.client.getObject({
         id: this.config.userRegistryId,
         options: { showContent: true },
       });
 
+      console.log('📦 SDK: UserRegistry object:', registryObj);
+
       if (registryObj.data && registryObj.data.content && registryObj.data.content.dataType === 'moveObject') {
         const fields = registryObj.data.content.fields as any;
+        console.log('📝 SDK: UserRegistry fields:', fields);
         
+        // Profiles are stored in user_profiles array
         if (fields.user_profiles && Array.isArray(fields.user_profiles)) {
+          console.log('📋 SDK: Found', fields.user_profiles.length, 'profiles in array');
+          
+          // Each entry in the array is an object ID - fetch each one
           for (const profileId of fields.user_profiles) {
+            console.log('🔍 SDK: Checking profile:', profileId);
+            
             try {
               const profileObj = await this.client.getObject({
                 id: profileId,
@@ -313,9 +318,13 @@ export class MiniHubSDK {
 
               if (profileObj.data && profileObj.data.content && profileObj.data.content.dataType === 'moveObject') {
                 const profileFields = profileObj.data.content.fields as any;
+                console.log('📝 SDK: Profile fields:', profileFields);
                 
+                // Check if this profile belongs to our address
                 if (profileFields.user_address === userAddress) {
-                  return {
+                  console.log('✅ SDK: Found matching profile!');
+                  
+                  const profile = {
                     id: profileFields.id?.id || profileObj.data.objectId,
                     userAddress: profileFields.user_address,
                     name: profileFields.name || '',
@@ -327,6 +336,9 @@ export class MiniHubSDK {
                     createdAt: Number(profileFields.created_at || 0),
                     updatedAt: Number(profileFields.updated_at || 0),
                   };
+                  
+                  console.log('✅ SDK: Returning profile:', profile);
+                  return profile;
                 }
               }
             } catch (err) {
@@ -336,6 +348,7 @@ export class MiniHubSDK {
         }
       }
 
+      console.log('❌ SDK: No profile found for address');
       return null;
     } catch (error) {
       console.error('❌ SDK: Error fetching user profile:', error);
@@ -348,150 +361,42 @@ export class MiniHubSDK {
    */
   async getEmployerProfileByAddress(employerAddress: string): Promise<EmployerProfile | null> {
     try {
-      console.log('🔍 SDK: Searching for EmployerProfile for address:', employerAddress);
-      
-      const registryObj = await this.client.getObject({
-        id: this.config.employerRegistryId,
-        options: { showContent: true },
-      });
-
-      if (registryObj.data && registryObj.data.content && registryObj.data.content.dataType === 'moveObject') {
-        const fields = registryObj.data.content.fields as any;
-        
-        if (fields.employer_profiles && Array.isArray(fields.employer_profiles)) {
-          for (const profileId of fields.employer_profiles) {
-            try {
-              const profileObj = await this.client.getObject({
-                id: profileId,
-                options: { showContent: true },
-              });
-
-              if (profileObj.data && profileObj.data.content && profileObj.data.content.dataType === 'moveObject') {
-                const profileFields = profileObj.data.content.fields as any;
-                
-                if (profileFields.employer_address === employerAddress) {
-                  return {
-                    id: profileFields.id?.id || profileObj.data.objectId,
-                    employerAddress: profileFields.employer_address,
-                    companyName: profileFields.company_name || '',
-                    description: profileFields.description || '',
-                    logoUrl: profileFields.logo_url || '',
-                    website: profileFields.website || '',
-                    industry: profileFields.industry || '',
-                    employeeCount: Number(profileFields.employee_count || 0),
-                    foundedYear: Number(profileFields.founded_year || 0),
-                    createdAt: Number(profileFields.created_at || 0),
-                    updatedAt: Number(profileFields.updated_at || 0),
-                  };
-                }
-              }
-            } catch (err) {
-              console.log('⚠️ SDK: Error fetching employer profile object:', err);
-            }
-          }
-        }
-      }
-
-      return null;
-    } catch (error) {
-      console.error('❌ SDK: Error fetching employer profile:', error);
-      return null;
-    }
-  }
-
-  /**
-   * Get employer capabilities (EmployerCap objects) for a given address
-   */
-  async getEmployerCaps(ownerAddress: string): Promise<EmployerCap[]> {
-    try {
+      // Get all owned objects for the employer
       const objects = await this.client.getOwnedObjects({
-        owner: ownerAddress,
+        owner: employerAddress,
         filter: {
-          StructType: `${this.config.packageId}::minihub::EmployerCap`,
+          StructType: `${this.config.packageId}::minihub::EmployerProfile`,
         },
         options: { showContent: true },
       });
 
-      const caps: EmployerCap[] = [];
-      for (const obj of objects.data) {
-        if (obj.data && obj.data.content && obj.data.content.dataType === 'moveObject') {
-          const fields = obj.data.content.fields as any;
-          caps.push({
-            id: fields.id.id,
-            jobId: fields.job_id,
-          });
-        }
+      if (objects.data.length === 0) {
+        return null;
       }
 
-      return caps;
-    } catch (error) {
-      console.error('Error fetching EmployerCaps:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Get all applications for a specific job
-   */
-  async getJobApplications(jobId: string): Promise<ApplicationProfile[]> {
-    try {
-      const dynamicFields = await this.client.getDynamicFields({
-        parentId: jobId,
-      });
-
-      const applications: ApplicationProfile[] = [];
-
-      for (const field of dynamicFields.data) {
-        const fieldObject = await this.client.getObject({
-          id: field.objectId,
-          options: { showContent: true },
-        });
-
-        if (
-          fieldObject.data &&
-          fieldObject.data.content &&
-          fieldObject.data.content.dataType === 'moveObject'
-        ) {
-          const fields = fieldObject.data.content.fields as any;
-          applications.push({
-            id: fields.id.id,
-            candidate: fields.candidate,
-            userProfileId: fields.user_profile_id,
-            jobId: fields.job_id,
-            coverMessage: fields.cover_message,
-            timestamp: Number(fields.timestamp),
-            cvUrl: fields.cv_url,
-          });
-        }
+      // Get the first (should be only) employer profile
+      const profileObj = objects.data[0];
+      if (!profileObj.data || !profileObj.data.content || profileObj.data.content.dataType !== 'moveObject') {
+        return null;
       }
 
-      return applications;
+      const fields = profileObj.data.content.fields as any;
+      return {
+        id: fields.id.id,
+        employerAddress: fields.employer_address,
+        companyName: fields.company_name,
+        description: fields.description,
+        logoUrl: fields.logo_url,
+        website: fields.website,
+        industry: fields.industry,
+        employeeCount: Number(fields.employee_count),
+        foundedYear: Number(fields.founded_year),
+        createdAt: Number(fields.created_at),
+        updatedAt: Number(fields.updated_at),
+      };
     } catch (error) {
-      console.error('Error fetching job applications:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Get all applications submitted by a specific user
-   */
-  async getUserApplications(userAddress: string): Promise<ApplicationProfile[]> {
-    try {
-      const allJobs = await this.getAllJobs();
-      const applications: ApplicationProfile[] = [];
-
-      for (const job of allJobs) {
-        const jobApplications = await this.getJobApplications(job.id);
-        const userApps = jobApplications.filter(
-          app => app.candidate === userAddress
-        );
-        applications.push(...userApps);
-      }
-
-      return applications;
-    } catch (error) {
-      console.error('Error fetching user applications:', error);
-      return [];
+      console.error('Error fetching employer profile by address:', error);
+      return null;
     }
   }
 
