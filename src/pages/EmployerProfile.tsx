@@ -294,7 +294,7 @@ export function EmployerProfile() {
           <>
             {!isEditMode ? (
               <button className="edit-button" onClick={() => setIsEditMode(true)}>
-                ✏️ Edit Profile
+                Edit Profile
               </button>
             ) : (
               <button className="cancel-button" onClick={() => setIsEditMode(false)}>

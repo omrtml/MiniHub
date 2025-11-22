@@ -252,16 +252,11 @@ export function Profile() {
     <div className="profile-container">
       <div className="profile-header">
         <h1>My Profile</h1>
-        {profileId && (
-          <div className="profile-status">
-            Profile ID: {profileId.slice(0, 8)}...{profileId.slice(-6)}
-          </div>
-        )}
         <button 
           onClick={() => setIsEditing(!isEditing)}
           className="edit-profile-btn"
         >
-          {isEditing ? '✕ Cancel' : 'Edit Profile'}
+          {isEditing ? '✕ Cancel' : '✏️ Edit Profile'}
         </button>
       </div>
 
