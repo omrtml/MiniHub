@@ -1,6 +1,6 @@
 import { useSuiClient } from '@mysten/dapp-kit';
 import { useQuery } from '@tanstack/react-query';
-import { MiniHubSDK, PackageConfig } from '../sdk/minihub-sdk';
+import { MiniHubSDK, PackageConfig } from '../sdk/minihub-sdk-simple';
 
 /**
  * Hook to initialize MiniHub SDK with environment configuration

@@ -5,7 +5,7 @@ import { getFullnodeUrl } from '@mysten/sui/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@mysten/dapp-kit/dist/index.css';
 import './App.css';
-import { Job } from './sdk/minihub-sdk';
+import { Job } from './sdk/minihub-sdk-simple';
 import { ZkLoginPanel } from './components/ZkLoginButton';
 import { useZkLogin } from './hooks/useZkLogin';
 import { useActiveJobs } from './hooks/useMiniHub';
