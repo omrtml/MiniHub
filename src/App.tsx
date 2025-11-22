@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { ConnectButton, useCurrentAccount, useDisconnectWallet } from '@mysten/dapp-kit';
 import { createNetworkConfig, SuiClientProvider, WalletProvider } from '@mysten/dapp-kit';
 import { getFullnodeUrl } from '@mysten/sui/client';
@@ -9,6 +10,8 @@ import { Job } from './sdk/minihub-sdk-simple';
 import { ZkLoginPanel } from './components/ZkLoginButton';
 import { useZkLogin } from './hooks/useZkLogin';
 import { useActiveJobs } from './hooks/useMiniHub';
+import { Profile } from './pages/Profile';
+import { CreateJob } from './pages/CreateJob';
 import logoImage from './img/logo.png';
 
 // Configure query client
@@ -123,6 +126,7 @@ function AppContent() {
   const { mutate: disconnectWallet } = useDisconnectWallet();
   const zkLogin = useZkLogin();
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const location = useLocation();
 
   // Check if user is authenticated via either method
   const isAuthenticated = !!walletAccount || zkLogin.isConnected;
@@ -153,9 +157,31 @@ function AppContent() {
       <div className="background-grid"></div>
       
       <header className="app-header">
-        <div className="logo">
+        <Link to="/" className="logo">
           <img src={logoImage} alt="MiniHub Logo" className="logo-image" />
-        </div>
+        </Link>
+        
+        <nav className="main-nav">
+          <Link 
+            to="/" 
+            className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
+          >
+            Jobs
+          </Link>
+          <Link 
+            to="/profile" 
+            className={`nav-link ${location.pathname === '/profile' ? 'active' : ''}`}
+          >
+            Profile
+          </Link>
+          <Link 
+            to="/create-job" 
+            className={`nav-link ${location.pathname === '/create-job' ? 'active' : ''}`}
+          >
+            Post Job
+          </Link>
+        </nav>
+
         <div className="header-actions">
           {isAuthenticated ? (
             <div className="user-info">
@@ -229,7 +255,11 @@ function AppContent() {
       )}
 
       <main className="app-main">
-        <JobListings />
+        <Routes>
+          <Route path="/" element={<JobListings />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/create-job" element={<CreateJob />} />
+        </Routes>
       </main>
 
       <footer className="app-footer">
@@ -244,7 +274,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <SuiClientProvider networks={networkConfig} defaultNetwork="testnet">
         <WalletProvider autoConnect>
-          <AppContent />
+          <Router>
+            <AppContent />
+          </Router>
         </WalletProvider>
       </SuiClientProvider>
     </QueryClientProvider>
