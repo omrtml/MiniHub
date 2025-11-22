@@ -102,6 +102,15 @@ export function Profile() {
   const handleSave = async () => {
     if (!userAddress) return;
     
+    // Check if user is using zkLogin
+    if (zkLogin.isConnected && !walletAccount) {
+      setSaveStatus({
+        type: 'error',
+        message: 'Profile editing is currently only available with wallet connection. Please connect a Sui wallet to edit your profile.',
+      });
+      return;
+    }
+    
     setIsSaving(true);
     setSaveStatus(null);
 
