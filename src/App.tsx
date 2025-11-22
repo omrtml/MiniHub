@@ -327,8 +327,6 @@ function AppContent() {
                 <div className="auth-section">
                   <ZkLoginPanel
                     googleClientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}
-                    facebookClientId={import.meta.env.VITE_FACEBOOK_CLIENT_ID}
-                    twitchClientId={import.meta.env.VITE_TWITCH_CLIENT_ID}
                     redirectUrl={import.meta.env.VITE_REDIRECT_URL || window.location.origin}
                   />
                 </div>
