@@ -6,12 +6,13 @@ A decentralized job board application built on the Sui blockchain. MiniHub conne
 
 - 🔐 **Dual Authentication**
   - **Sui Wallet Integration** - Connect with any Sui-compatible wallet
-  - **zkLogin** - Sign in with Google, Facebook, or Twitch (no wallet needed!)
-- 💼 **Job Listings** - Browse and filter blockchain jobs
-- 🔍 **Advanced Filters** - Search by category, location, type, and salary
+  - **zkLogin** - Sign in with Google (no wallet needed!)
+- 💼 **Job Listings** - Browse and filter blockchain jobs directly from Sui blockchain
+- 🔍 **Search & Filter** - Real-time search by title, employer, or description
 - 📝 **On-Chain Applications** - Submit applications directly to smart contracts
 - 🎨 **Modern UI** - Navy blue and orange themed responsive design
 - ⚡ **Fast & Reactive** - Built with React 18, TypeScript, and Vite
+- 🔗 **Blockchain SDK** - Direct integration with Sui smart contracts
 
 ## 🎨 Design Theme
 
@@ -42,13 +43,16 @@ Edit `.env` with your configuration:
 ```bash
 VITE_API_BASE_URL=http://localhost:3000/api
 VITE_SUI_NETWORK=testnet
+
+# Smart Contract Configuration (required)
 VITE_JOB_BOARD_PACKAGE_ID=0x...
 VITE_JOB_BOARD_OBJECT_ID=0x...
+VITE_USER_REGISTRY_ID=0x...
+VITE_EMPLOYER_REGISTRY_ID=0x...
 
 # zkLogin OAuth (optional, for social login)
 VITE_GOOGLE_CLIENT_ID=your-google-client-id
-VITE_FACEBOOK_CLIENT_ID=your-facebook-app-id
-VITE_TWITCH_CLIENT_ID=your-twitch-client-id
+VITE_REDIRECT_URL=http://localhost:5173
 ```
 
 > **Note:** For zkLogin setup instructions, see [ZKLOGIN_GUIDE.md](./ZKLOGIN_GUIDE.md)
@@ -73,12 +77,15 @@ npm run preview  # Preview production build
 src/
 ├── App.tsx              # Main app component
 ├── App.css              # Styling with navy/orange theme
+├── sdk/
+│   └── minihub-sdk.ts   # Sui blockchain SDK
 ├── types/
 │   └── index.ts         # TypeScript interfaces matching smart contracts
 ├── services/
 │   └── api.ts           # Backend API service
 ├── hooks/
-│   └── useZkLogin.ts    # zkLogin authentication hook
+│   ├── useZkLogin.ts    # zkLogin authentication hook
+│   └── useMiniHub.ts    # React hooks for blockchain data
 ├── components/
 │   ├── ZkLoginButton.tsx    # zkLogin UI components
 │   └── ZkLoginButton.css    # zkLogin styles

@@ -13,8 +13,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 20% 20%, rgba(255, 107, 53, 0.12) 0%, transparent 50%),
-              radial-gradient(circle at 80% 80%, rgba(0, 61, 115, 0.15) 0%, transparent 50%);
+  background: radial-gradient(circle at 20% 20%, rgba(255, 107, 53, 0.05) 0%, transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(0, 61, 115, 0.08) 0%, transparent 50%);
   pointer-events: none;
   z-index: 0;
 }
@@ -26,8 +26,8 @@
   right: 0;
   bottom: 0;
   background-image: 
-    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
   background-size: 50px 50px;
   pointer-events: none;
   z-index: 0;
@@ -43,13 +43,21 @@
   z-index: 10;
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--color-border);
-  background: rgba(0, 18, 41, 0.6);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .logo {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.logo-image {
+  width: 180px;
+  height: 60px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .logo-icon {
@@ -94,7 +102,7 @@
   align-items: center;
   gap: 1rem;
   padding: 0.5rem 1rem;
-  background: rgba(0, 61, 115, 0.15);
+  background: rgba(0, 61, 115, 0.05);
   border: 1px solid var(--color-border);
   border-radius: 12px;
   backdrop-filter: blur(10px);
@@ -114,7 +122,7 @@
   font-size: 0.9rem;
   color: var(--color-text-secondary);
   padding: 0.25rem 0.75rem;
-  background: rgba(0, 18, 20, 0.6);
+  background: rgba(0, 0, 0, 0.05);
   border-radius: 6px;
 }
 
@@ -160,7 +168,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 8, 20, 0.85);
+  background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -183,11 +191,11 @@
   position: relative;
   max-width: 600px;
   width: 100%;
-  background: rgba(0, 18, 41, 0.95);
+  background: white;
   border: 1px solid var(--color-border);
   border-radius: 20px;
   padding: 2.5rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   animation: slideUp 0.3s ease;
   max-height: 90vh;
   overflow-y: auto;
@@ -210,7 +218,7 @@
   right: 1rem;
   width: 36px;
   height: 36px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.05);
   border: 1px solid var(--color-border);
   border-radius: 8px;
   color: var(--color-text-secondary);
@@ -295,7 +303,7 @@
 .auth-divider span {
   display: inline-block;
   padding: 0 1rem;
-  background: rgba(0, 18, 41, 0.95);
+  background: white;
   color: var(--color-text-secondary);
   font-size: 0.85rem;
   font-weight: 600;
@@ -381,11 +389,12 @@
 
 /* Filters Section */
 .filters-section {
-  background: rgba(0, 61, 115, 0.1);
+  background: rgba(255, 255, 255, 0.8);
   border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 2rem;
   backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .search-bar {
@@ -404,7 +413,7 @@
 .search-input {
   width: 100%;
   padding: 1rem 1rem 1rem 3rem;
-  background: rgba(0, 18, 20, 0.6);
+  background: white;
   border: 1px solid var(--color-border);
   border-radius: 12px;
   color: var(--color-text-primary);
@@ -444,7 +453,7 @@
 
 .filter-group select {
   padding: 0.75rem 1rem;
-  background: rgba(0, 18, 20, 0.6);
+  background: white;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   color: var(--color-text-primary);
@@ -499,7 +508,7 @@
 
 /* Job Card */
 .job-card {
-  background: rgba(0, 61, 115, 0.08);
+  background: white;
   border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 1.5rem;
@@ -508,6 +517,7 @@
   gap: 1rem;
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .job-card:hover {
@@ -599,7 +609,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  background: rgba(0, 18, 20, 0.4);
+  background: rgba(0, 0, 0, 0.03);
   border-radius: 8px;
   font-size: 0.85rem;
   color: var(--color-text-secondary);
@@ -646,10 +656,11 @@
 .no-results {
   text-align: center;
   padding: 4rem 2rem;
-  background: rgba(0, 61, 115, 0.08);
+  background: white;
   border: 1px solid var(--color-border);
   border-radius: 16px;
   backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .no-results h3 {
@@ -670,7 +681,7 @@
   color: var(--color-text-secondary);
   font-size: 0.9rem;
   border-top: 1px solid var(--color-border);
-  background: rgba(0, 18, 41, 0.4);
+  background: rgba(255, 255, 255, 0.9);
   position: relative;
   z-index: 10;
 }

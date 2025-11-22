@@ -5,9 +5,11 @@ import { getFullnodeUrl } from '@mysten/sui/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import '@mysten/dapp-kit/dist/index.css';
 import './App.css';
-import type { JobDisplay } from './types';
+import { Job } from './sdk/minihub-sdk';
 import { ZkLoginPanel } from './components/ZkLoginButton';
 import { useZkLogin } from './hooks/useZkLogin';
+import { useActiveJobs } from './hooks/useMiniHub';
+import logoImage from './img/logo.png';
 
 // Configure query client
 const queryClient = new QueryClient();
@@ -21,81 +23,21 @@ const { networkConfig } = createNetworkConfig({
 function JobListings() {
   const walletAccount = useCurrentAccount();
   const zkLogin = useZkLogin();
-  const [jobs, setJobs] = useState<JobDisplay[]>([]);
-  const [filteredJobs, setFilteredJobs] = useState<JobDisplay[]>([]);
+  
+  // Fetch jobs from blockchain using SDK
+  const { data: jobs = [], isLoading, error } = useActiveJobs();
+  const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   
   // Check if user is authenticated via either method
   const isAuthenticated = !!walletAccount || zkLogin.isConnected;
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedType, setSelectedType] = useState('all');
-  const [selectedLocation, setSelectedLocation] = useState('all');
 
-  // Mock data for now - will be replaced with on-chain data
+  // Update filtered jobs when jobs data changes
   useEffect(() => {
-    // Simulate fetching from blockchain and enriching with off-chain data
-    const mockJobs: JobDisplay[] = [
-      {
-        id: '0x1',
-        employer: '0x123abc...',
-        title: 'Senior Blockchain Developer',
-        description: 'Looking for an experienced blockchain developer to work on Sui ecosystem projects. Must have Move language experience.',
-        salary: 150000,
-        application_count: 12,
-        hired_candidate: null,
-        is_active: true,
-        deadline: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days from now
-        // UI enriched fields
-        company: 'Sui Foundation',
-        location: 'Remote',
-        type: 'Full-time',
-        category: 'Engineering',
-        salaryDisplay: '$120k - $180k',
-        deadlineDisplay: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-        postedDate: '2024-11-20'
-      },
-      {
-        id: '0x2',
-        employer: '0x456def...',
-        title: 'Smart Contract Auditor',
-        description: 'Audit Move smart contracts for security vulnerabilities. Experience with blockchain security required.',
-        salary: 125000,
-        application_count: 8,
-        hired_candidate: null,
-        is_active: true,
-        deadline: Date.now() + 20 * 24 * 60 * 60 * 1000,
-        company: 'SecureChain Labs',
-        location: 'San Francisco',
-        type: 'Contract',
-        category: 'Security',
-        salaryDisplay: '$100k - $150k',
-        deadlineDisplay: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-        postedDate: '2024-11-19'
-      },
-      {
-        id: '0x3',
-        employer: '0x789ghi...',
-        title: 'Web3 Product Manager',
-        description: 'Lead product development for our DeFi platform on Sui. Must understand blockchain technology.',
-        salary: 140000,
-        application_count: 15,
-        hired_candidate: null,
-        is_active: true,
-        deadline: Date.now() + 25 * 24 * 60 * 60 * 1000,
-        company: 'DeFi Innovations',
-        location: 'New York',
-        type: 'Full-time',
-        category: 'Product',
-        salaryDisplay: '$130k - $170k',
-        deadlineDisplay: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-        postedDate: '2024-11-18'
-      },
-    ];
-    setJobs(mockJobs);
-    setFilteredJobs(mockJobs);
-  }, []);
+    setFilteredJobs(jobs);
+  }, [jobs]);
 
   // Filter logic
   useEffect(() => {
@@ -104,29 +46,13 @@ function JobListings() {
     if (searchTerm) {
       filtered = filtered.filter(job =>
         job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (job.company && job.company.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        job.description.toLowerCase().includes(searchTerm.toLowerCase())
+        job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.employer.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(job => job.category === selectedCategory);
-    }
-
-    if (selectedType !== 'all') {
-      filtered = filtered.filter(job => job.type === selectedType);
-    }
-
-    if (selectedLocation !== 'all') {
-      filtered = filtered.filter(job => job.location === selectedLocation);
-    }
-
     setFilteredJobs(filtered);
-  }, [searchTerm, selectedCategory, selectedType, selectedLocation, jobs]);
-
-  const categories = ['all', ...Array.from(new Set(jobs.map(job => job.category).filter(Boolean)))];
-  const types = ['all', ...Array.from(new Set(jobs.map(job => job.type).filter(Boolean)))];
-  const locations = ['all', ...Array.from(new Set(jobs.map(job => job.location).filter(Boolean)))];
+  }, [searchTerm, jobs]);
 
   return (
     <div className="job-listings-container">
@@ -137,82 +63,55 @@ function JobListings() {
           </svg>
           <input
             type="text"
-            placeholder="Search jobs by title, company, or description..."
+            placeholder="Search jobs by title, employer, or description..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
           />
         </div>
-
-        <div className="filter-controls">
-          <div className="filter-group">
-            <label>Category</label>
-            <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-              {categories.map(cat => (
-                <option key={cat} value={cat}>{cat === 'all' ? 'All Categories' : cat}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Job Type</label>
-            <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)}>
-              {types.map(type => (
-                <option key={type} value={type}>{type === 'all' ? 'All Types' : type}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label>Location</label>
-            <select value={selectedLocation} onChange={(e) => setSelectedLocation(e.target.value)}>
-              {locations.map(loc => (
-                <option key={loc} value={loc}>{loc === 'all' ? 'All Locations' : loc}</option>
-              ))}
-            </select>
-          </div>
-        </div>
       </div>
 
       <div className="jobs-header">
-        <h2>{filteredJobs.length} {filteredJobs.length === 1 ? 'Job' : 'Jobs'} Found</h2>
-        {isAuthenticated && <span className="wallet-indicator">✓ {zkLogin.isConnected ? 'Signed In' : 'Connected'}</span>}
+        <h2>
+          {isLoading ? 'Loading jobs...' : `${filteredJobs.length} ${filteredJobs.length === 1 ? 'Job' : 'Jobs'} Found`}
+        </h2>
       </div>
+
+      {error && (
+        <div className="error-message">
+          <p>⚠️ Error loading jobs. Make sure your smart contract is deployed and configured in .env</p>
+        </div>
+      )}
 
       <div className="jobs-grid">
         {filteredJobs.map(job => (
           <div key={job.id} className="job-card">
             <div className="job-header">
               <h3>{job.title}</h3>
-              {job.type && <span className="job-type">{job.type}</span>}
+              <span className="job-type">{job.isActive ? '✓ Active' : '✗ Closed'}</span>
             </div>
-            {job.company && <div className="job-company">{job.company}</div>}
+            <div className="job-company">Employer: {job.employer.slice(0, 10)}...{job.employer.slice(-6)}</div>
             <div className="job-meta">
-              {job.location && <span className="job-location">📍 {job.location}</span>}
-              <span className="job-salary">💰 {job.salaryDisplay || `$${job.salary?.toLocaleString()}`}</span>
+              {job.salary && (
+                <span className="job-salary">💰 ${job.salary.toLocaleString()}</span>
+              )}
             </div>
             <p className="job-description">{job.description}</p>
-            <div className="job-footer">
-              {job.category && <span className="job-category">{job.category}</span>}
-              <span className="job-date">
-                {job.postedDate ? `Posted ${new Date(job.postedDate).toLocaleDateString()}` : 'Recently posted'}
-              </span>
-            </div>
             <div className="job-stats">
-              <span>📊 {job.application_count} applications</span>
-              <span>⏰ Deadline: {job.deadlineDisplay || new Date(job.deadline).toLocaleDateString()}</span>
+              <span>📊 {job.applicationCount} applications</span>
+              <span>⏰ Deadline: {new Date(job.deadline).toLocaleDateString()}</span>
             </div>
-            <button className="apply-btn" disabled={!isAuthenticated || !job.is_active}>
-              {!isAuthenticated ? 'Sign In to Apply' : !job.is_active ? 'Job Closed' : 'Apply Now'}
+            <button className="apply-btn" disabled={!isAuthenticated || !job.isActive}>
+              {!isAuthenticated ? 'Sign In to Apply' : !job.isActive ? 'Job Closed' : 'Apply Now'}
             </button>
           </div>
         ))}
       </div>
 
-      {filteredJobs.length === 0 && (
+      {filteredJobs.length === 0 && !isLoading && !error && (
         <div className="no-results">
           <h3>No jobs found</h3>
-          <p>Try adjusting your filters or search terms</p>
+          <p>Try adjusting your search terms or check back later for new postings</p>
         </div>
       )}
     </div>
@@ -255,18 +154,11 @@ function AppContent() {
       
       <header className="app-header">
         <div className="logo">
-          <div className="logo-icon">MH</div>
-          <div className="logo-text">
-            <h1>MiniHub</h1>
-            <span className="tagline">Sui Job Board</span>
-          </div>
+          <img src={logoImage} alt="MiniHub Logo" className="logo-image" />
         </div>
         <div className="header-actions">
           {isAuthenticated ? (
             <div className="user-info">
-              <span className="auth-indicator">
-                {zkLogin.isConnected ? '🔐' : '🔗'} Connected
-              </span>
               <span className="user-address">
                 {userAddress?.slice(0, 6)}...{userAddress?.slice(-4)}
               </span>

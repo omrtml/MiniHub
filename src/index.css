@@ -10,15 +10,15 @@
   --color-orange: #FF6B35;
   --color-orange-light: #FF8C5A;
   --color-orange-dark: #E55A2B;
-  --color-bg-primary: #000814;
-  --color-bg-secondary: #001229;
-  --color-text-primary: #FFFFFF;
-  --color-text-secondary: #B8C4D4;
-  --color-border: rgba(0, 93, 166, 0.2);
+  --color-bg-primary: #FFFFFF;
+  --color-bg-secondary: #F8F9FA;
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #666666;
+  --color-border: rgba(0, 93, 166, 0.15);
 
-  color-scheme: dark;
+  color-scheme: light;
   color: var(--color-text-primary);
-  background: linear-gradient(135deg, var(--color-bg-primary) 0%, var(--color-navy-dark) 50%, var(--color-bg-secondary) 100%);
+  background: var(--color-bg-primary);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
