@@ -17,7 +17,6 @@ export function Profile() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-  const [sdk, setSdk] = useState<MiniHubSDK | null>(null);
   const [applicationsWithJobs, setApplicationsWithJobs] = useState<Array<ApplicationProfile & { job?: Job }>>([]);
   const [isLoadingApplications, setIsLoadingApplications] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -50,8 +49,6 @@ export function Profile() {
           employerRegistryId: import.meta.env.VITE_EMPLOYER_REGISTRY_ID,
           clockId: '0x6',
         });
-
-        setSdk(sdkInstance);
 
         console.log('📦 SDK Config:', {
           packageId: import.meta.env.VITE_JOB_BOARD_PACKAGE_ID,
