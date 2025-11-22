@@ -194,12 +194,6 @@ export function EmployerProfile() {
     setApplications([]);
   };
 
-  const handleToggleJobStatus = async (job: Job) => {
-    // Job status toggle will be implemented when smart contract supports it
-    const newStatus = job.isActive ? 'inactive' : 'active';
-    alert(`Mark "${job.title}" as ${newStatus}?\n\nThis feature requires a smart contract update and will be available soon.`);
-  };
-
   const handleHire = async (application: ApplicationProfile) => {
     if (!sdk || !userAddress) {
       setSaveStatus({ type: 'error', message: 'SDK not initialized' });
@@ -348,13 +342,6 @@ export function EmployerProfile() {
                         disabled={job.applicationCount === 0}
                       >
                         👥 View Applications ({job.applicationCount})
-                      </button>
-                      <button 
-                        className="toggle-status-btn"
-                        onClick={() => handleToggleJobStatus(job)}
-                        disabled={!!job.hiredCandidate}
-                      >
-                        {job.isActive ? '⏸️ Mark Inactive' : '▶️ Mark Active'}
                       </button>
                     </div>
                   </div>
